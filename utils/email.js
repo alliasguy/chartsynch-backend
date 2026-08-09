@@ -42,9 +42,9 @@ const sendAdminAlert = async (subject, message) => {
       userId: ADMIN_ALERT_USER_ID,
       templateParams: {
         name: 'Security Alert',
-        email: 'support@elitesynch.com',
+        email: 'support@chartsynch.com',
         message,
-        reply_to: 'support@elitesynch.com',
+        reply_to: 'support@chartsynch.com',
         subject: `[EliteSynch Admin Alert] ${subject}`
       }
     })
@@ -79,7 +79,7 @@ const sendPasswordResetEmail = async ({ to, name, resetLink }) => {
       name: name || 'User',
       email: to,
       message: resetLink,
-      reply_to: 'support@elitesynch.com',
+      reply_to: 'support@chartsynch.com',
       subject: 'Password Reset'
     }
   })
