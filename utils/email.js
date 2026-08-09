@@ -11,7 +11,7 @@ const ADMIN_ALERT_USER_ID = process.env.EMAILJS_ADMIN_USER_ID || 'rtqTlHuc9A8eus
 
 const USER_MAIL_SERVICE_ID = process.env.EMAILJS_USER_SERVICE_ID || 'service_zwupozl'
 const USER_MAIL_USER_ID = process.env.EMAILJS_USER_USER_ID || 'UhO5vWVwakRQFXmIu'
-const VERIFY_TEMPLATE_ID = process.env.EMAILJS_VERIFY_TEMPLATE_ID || 'template_temrrun'
+const VERIFY_TEMPLATE_ID = process.env.EMAILJS_VERIFY_TEMPLATE_ID || 'template_1lc11k1'
 const GENERIC_TEMPLATE_ID = process.env.EMAILJS_GENERIC_TEMPLATE_ID || 'template_f2a7aqv'
 
 const sendViaEmailJS = async ({ serviceId, templateId, userId, templateParams }) => {

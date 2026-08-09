@@ -19,7 +19,11 @@ app.set('trust proxy', 1)
 // only ever serves JSON, never HTML.
 app.use(helmet())
 
-const allowedOrigins = ['https://www.elitesynch.com', 'https://elitesynch.com', 'http://localhost:3000']
+const allowedOrigins = [
+  'https://www.chartsynch.com', 'https://chartsynch.com',
+  'https://www.elitesynch.com', 'https://elitesynch.com',
+  'http://localhost:3000',
+]
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no Origin header (server-to-server calls, e.g. Vercel Cron)
