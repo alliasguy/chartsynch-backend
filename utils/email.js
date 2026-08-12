@@ -66,7 +66,15 @@ const sendVerificationEmail = async ({ to, name, verificationLink }) => {
     serviceId: USER_MAIL_SERVICE_ID,
     templateId: VERIFY_TEMPLATE_ID,
     userId: USER_MAIL_USER_ID,
-    templateParams: { name, email: to, verificationLink }
+    templateParams: {
+      name: name || 'User',
+      email: to,
+      verificationLink,
+      link: verificationLink,
+      message: verificationLink,
+      reply_to: 'support@chartsynch.com',
+      subject: 'Verify Your ChartSynch Account'
+    }
   })
 }
 
