@@ -10,35 +10,42 @@ const { asString, asObjectId } = require('../utils/validation')
 const register = async (req, res) => {
   const { firstName, lastName, userName, password, server, phonenumber, deviceName, country } = req.body
   const referralLink = asString(req.body.referralLink)
-  const email = String(req.body.email || '').toLowerCase()
+  const email = String(req.body.email || '').toLowerCase().trim()
+  const cleanFirstName = String(firstName || '').trim()
+  const cleanLastName = String(lastName || '').trim()
+  const cleanUserName = String(userName || '').trim()
+  const cleanPassword = String(password || '').trim()
   const now = new Date()
 
+  if (!cleanFirstName || !cleanLastName || !cleanUserName || !email || !cleanPassword) {
+    return res.status(400).json({ status: 'error', message: 'All required fields (first name, last name, username, email, password) must be provided.' })
+  }
+
   try {
-    // Check if the user already exists
-    const existingUser = await User.findOne({ email })
+    // Check if the user already exists (by email or username)
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username: cleanUserName }]
+    })
     if (existingUser) {
-      return res.status(409).json({ status: 'error', message: 'Email or username already exists' })
+      const isEmailMatch = existingUser.email === email
+      return res.status(409).json({
+        status: 'error',
+        message: isEmailMatch ? 'An account with this email already exists' : 'Username is already taken'
+      })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await bcrypt.hash(cleanPassword, 12)
 
     // Check for referring user
     const referringUser = referralLink ? await User.findOne({ username: referralLink }) : null
     if (referringUser) {
-      // Update referring user's referral info. Mixing $push with plain
-      // top-level fields (as this used to) is invalid - the Mongo driver
-      // rejects any update document that isn't either all-operators or a
-      // full replacement, so this previously threw on every referred
-      // signup and failed the registration outright. $inc also avoids the
-      // lost-update race that read-modify-write (referringUser.refBonus +
-      // 500) has under concurrent signups.
       await User.updateOne(
         { username: referralLink },
         {
           $push: {
             referred: {
-              firstname: firstName,
-              lastname: lastName,
+              firstname: cleanFirstName,
+              lastname: cleanLastName,
               email: email,
               date: now.toLocaleString(),
               refBonus: 15,
@@ -56,9 +63,9 @@ const register = async (req, res) => {
 
     // Create a new user
     const newUser = await User.create({
-      firstname: firstName,
-      lastname: lastName,
-      username: userName,
+      firstname: cleanFirstName,
+      lastname: cleanLastName,
+      username: cleanUserName,
       email,
       phonenumber,
       password: hashedPassword,
@@ -82,16 +89,21 @@ const register = async (req, res) => {
       JWT_SECRET,
       { expiresIn: '1h' }
     )
-    const user = await User.findOne({ email: email })
-    //create verification link
-    const VerificationCode = await Token.create({
-      userId: user._id, token: token
-    })
 
-    const verificationLink = `https://www.chartsynch.com/${user._id}/verify/${token}`
+    // Create verification code safely
+    try {
+      await Token.findOneAndUpdate(
+        { userId: newUser._id },
+        { token: token },
+        { upsert: true, new: true }
+      )
+    } catch (tokenErr) {
+      console.error('Error saving verification token:', tokenErr)
+    }
 
-    // Sent server-side (not returned in the response) - the link is only
-    // ever delivered to the account's own inbox now.
+    const verificationLink = `https://www.chartsynch.com/${newUser._id}/verify/${token}`
+
+    // Sent server-side (not returned in the response)
     try {
       await sendVerificationEmail({ to: newUser.email, name: newUser.firstname, verificationLink })
     } catch (emailError) {
@@ -105,16 +117,15 @@ const register = async (req, res) => {
       name: newUser.firstname,
       token,
       adminSubject: 'User Signup Alert',
-      message: `A new user with the following details just signed up:\nName: ${firstName} ${lastName}\nEmail: ${email} \nlocation: ${country} \ndevice: ${deviceName}`,
+      message: `A new user with the following details just signed up:\nName: ${cleanFirstName} ${cleanLastName}\nEmail: ${email} \nlocation: ${country} \ndevice: ${deviceName}`,
       subject: 'Successful User Referral Alert',
+      referringUser: referringUser ? referringUser._id : null
     }
 
     if (referringUser) {
       response.referringUserEmail = referringUser.email
       response.referringUserName = referringUser.firstname
-      response.referringUserMessage = `A new user with the name ${firstName} ${lastName} just signed up with your referral link. You will now earn 10% of every deposit this user makes. Keep referring to earn more.`
-    } else {
-      response.referringUser = null
+      response.referringUserMessage = `A new user with the name ${cleanFirstName} ${cleanLastName} just signed up with your referral link. You will now earn 10% of every deposit this user makes. Keep referring to earn more.`
     }
 
     return res.status(201).json(response)
