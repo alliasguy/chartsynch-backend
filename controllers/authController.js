@@ -88,7 +88,7 @@ const register = async (req, res) => {
       userId: user._id, token: token
     })
 
-    const verificationLink = `https://www.elitesynch.com/${user._id}/verify/${token}`
+    const verificationLink = `https://www.chartsynch.com/${user._id}/verify/${token}`
 
     // Sent server-side (not returned in the response) - the link is only
     // ever delivered to the account's own inbox now.
@@ -262,7 +262,7 @@ const forgotPassword = async (req, res) => {
       }
     )
 
-    const resetLink = `https://www.elitesynch.com/resetpassword/${email}/${rawToken}`
+    const resetLink = `https://www.chartsynch.com/resetpassword/${email}/${rawToken}`
 
     try {
       await sendPasswordResetEmail({ to: user.email, name: user.firstname, resetLink })

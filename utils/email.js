@@ -1,29 +1,33 @@
+require('dotenv').config()
+
 const EMAILJS_ENDPOINT = 'https://api.emailjs.com/api/v1.0/email/send'
 
-// Two separate EmailJS accounts were already in use before this refactor: one
-// for admin alerts (server-side already), one for user-facing mail (used to
-// be sent from the browser). Both are called the same way here - a plain
-// server-to-EmailJS REST call, matching the pattern that already worked for
-// admin alerts.
-const ADMIN_ALERT_SERVICE_ID = process.env.EMAILJS_ADMIN_SERVICE_ID || 'service_7p8jplz'
-const ADMIN_ALERT_TEMPLATE_ID = process.env.EMAILJS_ADMIN_TEMPLATE_ID || 'template_wxxqpes'
-const ADMIN_ALERT_USER_ID = process.env.EMAILJS_ADMIN_USER_ID || 'rtqTlHuc9A8eus7Xh'
+// EmailJS credentials (loaded from env with fallbacks)
+const ADMIN_ALERT_SERVICE_ID = process.env.EMAILJS_ADMIN_SERVICE_ID || 'service_xvf59us'
+const ADMIN_ALERT_TEMPLATE_ID = process.env.EMAILJS_ADMIN_TEMPLATE_ID || 'template_g6y6gxq'
+const ADMIN_ALERT_USER_ID = process.env.EMAILJS_ADMIN_USER_ID || 'ee7CtMRdf3w3NMhRi'
 
-const USER_MAIL_SERVICE_ID = process.env.EMAILJS_USER_SERVICE_ID || 'service_zwupozl'
-const USER_MAIL_USER_ID = process.env.EMAILJS_USER_USER_ID || 'UhO5vWVwakRQFXmIu'
+const USER_MAIL_SERVICE_ID = process.env.EMAILJS_USER_SERVICE_ID || 'service_xvf59us'
+const USER_MAIL_USER_ID = process.env.EMAILJS_USER_USER_ID || 'ee7CtMRdf3w3NMhRi'
 const VERIFY_TEMPLATE_ID = process.env.EMAILJS_VERIFY_TEMPLATE_ID || 'template_1lc11k1'
-const GENERIC_TEMPLATE_ID = process.env.EMAILJS_GENERIC_TEMPLATE_ID || 'template_f2a7aqv'
+const GENERIC_TEMPLATE_ID = process.env.EMAILJS_GENERIC_TEMPLATE_ID || 'template_g6y6gxq'
 
 const sendViaEmailJS = async ({ serviceId, templateId, userId, templateParams }) => {
+  const payload = {
+    service_id: serviceId,
+    template_id: templateId,
+    user_id: userId,
+    template_params: templateParams
+  }
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY || process.env.EMAILJS_ACCESS_TOKEN
+  if (privateKey) {
+    payload.accessToken = privateKey
+  }
+
   const response = await fetch(EMAILJS_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id: serviceId,
-      template_id: templateId,
-      user_id: userId,
-      template_params: templateParams
-    })
+    body: JSON.stringify(payload)
   })
   if (!response.ok) {
     const body = await response.text().catch(() => '')
@@ -45,7 +49,7 @@ const sendAdminAlert = async (subject, message) => {
         email: 'support@chartsynch.com',
         message,
         reply_to: 'support@chartsynch.com',
-        subject: `[EliteSynch Admin Alert] ${subject}`
+        subject: `[ChartSynch Admin Alert] ${subject}`
       }
     })
   } catch (error) {
